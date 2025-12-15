@@ -181,10 +181,6 @@ cython_debug/
 #  you could uncomment the following to ignore the entire vscode folder
 # .vscode/
 
-# csv dataset
-Clean2_VKM_dataset.csv
-*.csv
-
 # Ruff stuff:
 .ruff_cache/
 
