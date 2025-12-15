@@ -1,0 +1,9 @@
+startup command local:
+uvicorn AIRecommenderModel:app --reload
+
+
+
+
+check voor lege poort
+docker build -t lu3-ai-recommender .
+docker run --rm -p 8000:8000 lu3-ai-recommender
