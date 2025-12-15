@@ -231,5 +231,3 @@ async def health_check():
         "cross_encoder_loaded": app.state.cross_encoder is not None,
         "rows_loaded": len(app.state.df)
     }        
-# startup
-# uvicorn AIRecommenderModel:app --reload
