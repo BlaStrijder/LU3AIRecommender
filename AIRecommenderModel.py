@@ -38,7 +38,7 @@ app = FastAPI()
 
 
 def initializeModel():
-    app.state.model = SentenceTransformer("all-mpnet-base-v2")
+    app.state.model = SentenceTransformer("all-MiniLM-L6-v2") # all-mpnet-base-v2
     app.state.cross_encoder = CrossEncoder("cross-encoder/ms-marco-MiniLM-L6-v2")
 
     app.state.df = pd.read_csv("Clean2_VKM_dataset.csv")
@@ -126,7 +126,7 @@ def questionnaire_to_query_embeddings(answers):
             q_embs[col] = np.zeros((1, 768), dtype=np.float32)
     return q_embs
 
-def multi_field_search(q_embs, top_k=20):
+def multi_field_search(q_embs, top_k=30):
     col_embeddings = app.state.col_embeddings
     WEIGHTS = app.state.WEIGHTS
 
@@ -192,7 +192,7 @@ async def recommendation(q: Questionnaire):
         q_embs = questionnaire_to_query_embeddings(answers)
         
         # Multi-field search
-        idx, sims_total, sims_raw, sims_weighted = multi_field_search(q_embs, top_k=10)
+        idx, sims_total, sims_raw, sims_weighted = multi_field_search(q_embs, top_k=15)
         
         # Build query string for cross-encoder
             # query_string = " ".join(value for value, rating in answers.values())
@@ -223,8 +223,8 @@ async def recommendation(q: Questionnaire):
         logger.error(f"Error in recommendation: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
     
-@app.get("/health")
-async def health_check():
+@app.get("/")
+async def check():
     return {
         "status": "ok",
         "model_loaded": app.state.model is not None,
