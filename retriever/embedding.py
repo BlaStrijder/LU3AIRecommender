@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
-model = SentenceTransformer("paraphrase-MiniLM-L3-v2")
+model = SentenceTransformer("all-mpnet-base-v2") # paraphrase-MiniLM-L3-v2        multi-qa-MiniLM-L6-cos-v1
 
 # ---- documents ----
 df = pd.read_csv("Clean2_VKM_dataset.csv")

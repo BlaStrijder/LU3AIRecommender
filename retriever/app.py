@@ -50,7 +50,7 @@ def embed_query(q: Questionnaire):
     # build weighted semantic vector
     for category, item in q.dict().items():
         sem_vec = app.state.semantic_embeddings[f"{category}:{item['keuze']}"]   # get semantic vector
-        weight = item["rating"] / 5.0   # normalize to [0,1]
+        weight = item["rating"] / 5.0   # normalize to [0.2 ,1]
         vectors.append(weight * sem_vec)   # weight semantic vector hier komt bijvoorbeeld 2/5 * 0.456... uit 
 
     # mean of semantic vectors and normalize
@@ -107,4 +107,27 @@ def health():
         "status": "ok",
         "rows": len(app.state.df),
         "embeddings_loaded": True,
+    }
+
+@app.get("/ready")  # check if everything is prima en load is gelukt
+def health():
+    reranker_status = "unknown"
+
+    try:
+        r = requests.get(
+            f"{RERANKER_URL}/",
+            timeout=30
+        )
+        if r.status_code == 200:
+            reranker_status = "ok"
+        else:
+            reranker_status = "error"
+    except requests.RequestException:
+        reranker_status = "down"
+
+    return {
+        "status": "ok",
+        "rows": len(app.state.df),
+        "embeddings_loaded": app.state.embeddings is not None,
+        "reranker": reranker_status,
     }

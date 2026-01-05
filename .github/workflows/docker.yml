@@ -1,0 +1,32 @@
+name: Build & Push Images
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Build & push retriever
+      uses: docker/build-push-action@v5
+      with:
+        context: ./retriever
+        push: true
+        tags: blastrijder/lu3airecommender-retriever:latest
+
+    - name: Build & push reranker
+      uses: docker/build-push-action@v5
+      with:
+        context: ./crossencoder
+        push: true
+        tags: blastrijder/lu3airecommender-reranker:latest
