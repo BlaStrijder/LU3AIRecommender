@@ -1,3 +1,7 @@
+# these files are files you generate that do not need to be tracked by git
+semantic_embeddings.npy
+embeddings.npy
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
