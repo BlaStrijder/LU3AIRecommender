@@ -23,10 +23,3 @@ jobs:
         context: ./retriever
         push: true
         tags: blastrijder/lu3airecommender-retriever:latest
-
-    - name: Build & push reranker
-      uses: docker/build-push-action@v5
-      with:
-        context: ./crossencoder
-        push: true
-        tags: blastrijder/lu3airecommender-reranker:latest
