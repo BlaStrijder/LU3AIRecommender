@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List
 import pandas as pd
@@ -18,9 +18,16 @@ class AnswerItem(BaseModel):
     rating: int = 3  # can be 1–5
 
 class Questionnaire(BaseModel):
-    waardes: AnswerItem
-    activiteiten: AnswerItem
-    interesse: AnswerItem
+    q1: AnswerItem
+    q2: AnswerItem
+    q3: AnswerItem
+    q4: AnswerItem
+    q5: AnswerItem
+    q6: AnswerItem
+    q7: AnswerItem
+    q8: AnswerItem
+    q9: AnswerItem
+    q10: AnswerItem
 
 class Candidate(BaseModel):
     module_id: int
@@ -48,9 +55,25 @@ def startup():
 def embed_query(q: Questionnaire):
     vectors = []
     # build weighted semantic vector
-    for category, item in q.dict().items():
-        sem_vec = app.state.semantic_embeddings[f"{category}:{item['keuze']}"]   # get semantic vector
+    for question, item in q.dict().items():
+        key = f"{question}:{item['keuze']}"  # e.g., "q1:Being creative"
+
+        if key not in app.state.semantic_embeddings:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid answer '{item['keuze']}' for {question}"
+            )
+        
+        sem_vec = app.state.semantic_embeddings[key]   # get semantic vector
+
         weight = item["rating"] / 5.0   # normalize to [0.2 ,1]
+
+        if weight <= 0 or weight > 1:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid rating '{item['rating']}' for {question}"
+            )
+        
         vectors.append(weight * sem_vec)   # weight semantic vector hier komt bijvoorbeeld 2/5 * 0.456... uit 
 
     # mean of semantic vectors and normalize
@@ -74,10 +97,10 @@ def rerank(query: str, candidates: list):    # candidates is a list of dicts in 
 def retrieve(q: Questionnaire): 
     q_emb = embed_query(q)   
     sims = cosine_similarity(q_emb.reshape(1, -1), app.state.embeddings).flatten()  # compute cosine similarity
-    idx = sims.argsort()[::-1][:10]  # get top 10 indices
+    idx = sims.argsort()[::-1][:15]  # get top 15 indices
 
     results = [] 
-    for i in idx:  # for each index in top 10 add to results
+    for i in idx:  # for each index in top 15 add to results
         row = app.state.df.iloc[i]
         results.append(
             Candidate(
@@ -93,13 +116,17 @@ def retrieve(q: Questionnaire):
 def recommend(q: Questionnaire):
     candidates = retrieve(q)  # get top 10 candidates 
 
-    query = (                                          # construct query string for reranker
-        f"De gebruiker waardeert {q.waardes.keuze}, "
-        f"doet graag {q.activiteiten.keuze}, "
-        f"en heeft interesse in {q.interesse.keuze}."
+    query = " ".join(
+    f"Vraag {field[1:]} ({item['rating']}/5): {item['keuze']}"
+    for field, item in q.dict().items()
     )
 
-    return rerank(query, [c.dict() for c in candidates])   # returns query and candidates as list of dicts
+    reranked = rerank(
+        query,
+        [c.dict() for c in candidates]
+    )
+
+    return reranked[:10]   # returns 10 reranked candidates as list of dicts
 
 @app.get("/")  # check if everything is prima en load is gelukt
 def health():
@@ -110,7 +137,7 @@ def health():
     }
 
 @app.get("/ready")  # check if everything is prima en load is gelukt
-def health():
+def ready():
     reranker_status = "unknown"
 
     try:
