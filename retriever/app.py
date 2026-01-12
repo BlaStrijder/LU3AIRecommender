@@ -152,18 +152,17 @@ def health():
 @app.get("/ready")  # check if everything is prima en load is gelukt
 def ready():
     reranker_status = "unknown"
-
-    try:
-        r = requests.get(
-            f"{RERANKER_URL}/",
-            timeout=30
-        )
-        if r.status_code == 200:
-            reranker_status = "ok"
-        else:
-            reranker_status = "error"
-    except requests.RequestException:
-        reranker_status = "down"
+    
+    for i in range(3):
+        try:
+            r = requests.get(f"{RERANKER_URL}/", timeout=5)
+            if r.status_code == 200:
+                reranker_status = "ok"
+            else:
+                reranker_status = "error"
+                break
+        except requests.RequestException:
+            continue
 
     return {
         "status": "ok",
