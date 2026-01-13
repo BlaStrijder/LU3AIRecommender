@@ -89,14 +89,19 @@ def embed_query(q: Questionnaire):
     return query_vec
 
 
-def rerank(query: str, candidates: list):    # candidates is a list of dicts in the form of Candidate
-    response = requests.post(
-        f"{RERANKER_URL}/rerank",
-        json={"query": query, "candidates": candidates},
-        timeout=10,
-    )
-    response.raise_for_status()   # raise error if not 200 OK
-    return response.json()
+def rerank(query: str, candidates: list):   # candidates is a list of dicts in the form of Candidate
+    try:
+        response = requests.post(
+            f"{RERANKER_URL}/rerank",
+            json={"query": query, "candidates": candidates},
+            timeout=30
+        )
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.Timeout:
+        return {"error": "Reranker timed out"}
+    except requests.exceptions.RequestException as e:
+        return {"error": f"Reranker request failed: {str(e)}"}
 
 # ---------- Routes ----------
 
@@ -152,7 +157,7 @@ def health():
 def ready():
     reranker_status = "unknown"
 
-    for i in range(3):
+    for i in range(5):
         try:
             r = requests.get(f"{RERANKER_URL}/", timeout=5)
             if r.status_code == 200:
