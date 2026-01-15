@@ -40,7 +40,7 @@ class Candidate(BaseModel):
 @app.on_event("startup")
 def startup():
     # Load dataset
-    app.state.df = pd.read_csv("Clean2_VKM_dataset.csv")
+    app.state.df = pd.read_csv("avans_kk_DB.vkms_en.csv")
 
     # Load precomputed embeddings
     app.state.embeddings = np.load("embeddings.npy")
