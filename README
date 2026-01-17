@@ -4,3 +4,48 @@ startup command local
 of als het al gebuild is   
 
  docker-compose up
+
+dit is een test request
+
+ {
+  "q1": {
+    "keuze": "Helping others",
+    "rating": 1
+  },
+  "q2": {
+    "keuze": "Learn a new skill",
+    "rating": 3
+  },
+  "q3": {
+    "keuze": "Art and design",
+    "rating": 1
+  },
+  "q4": {
+    "keuze": "Creatively and freely",
+    "rating": 3
+  },
+  "q5": {
+    "keuze": "By reading and understanding theory",
+    "rating": 2
+  },
+  "q6": {
+    "keuze": "Problem-solving",
+    "rating": 3
+  },
+  "q7": {
+    "keuze": "Seeing practical results",
+    "rating": 3
+  },
+  "q8": {
+    "keuze": "Quiet environment without distractions",
+    "rating": 3
+  },
+  "q9": {
+    "keuze": "Data analysis and AI",
+    "rating": 5
+  },
+  "q10": {
+    "keuze": "By following tutorials and guides",
+    "rating": 3
+  }
+}
