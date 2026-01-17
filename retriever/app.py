@@ -40,7 +40,7 @@ class Candidate(BaseModel):
 @app.on_event("startup")
 def startup():
     # Load dataset
-    app.state.df = pd.read_csv("Clean2_VKM_dataset.csv")
+    app.state.df = pd.read_csv("avans_kk_DB.vkms_en.csv")
 
     # Load precomputed embeddings
     app.state.embeddings = np.load("embeddings.npy")
@@ -66,9 +66,16 @@ def embed_query(q: Questionnaire):
         
         sem_vec = app.state.semantic_embeddings[key]   # get semantic vector
 
-        weight = item["rating"] / 5.0   # normalize to [0.2 ,1]
-
-        if weight <= 0 or weight > 1:
+        weight_map = {
+            5: 1.0,
+            4: 0.8,
+            3: 0.5,
+            2: 0.3,
+            1: 0.1
+        }
+        weight = weight_map[item["rating"]]
+        
+        if weight < 0 or weight > 1:
             raise HTTPException(
                 status_code=400,
                 detail=f"Invalid rating '{item['rating']}' for {question}"
@@ -82,14 +89,19 @@ def embed_query(q: Questionnaire):
     return query_vec
 
 
-def rerank(query: str, candidates: list):    # candidates is a list of dicts in the form of Candidate
-    response = requests.post(
-        f"{RERANKER_URL}/rerank",
-        json={"query": query, "candidates": candidates},
-        timeout=10,
-    )
-    response.raise_for_status()   # raise error if not 200 OK
-    return response.json()
+def rerank(query: str, candidates: list):   # candidates is a list of dicts in the form of Candidate
+    try:
+        response = requests.post(
+            f"{RERANKER_URL}/rerank",
+            json={"query": query, "candidates": candidates},
+            timeout=30
+        )
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.Timeout:
+        return {"error": "Reranker timed out"}
+    except requests.exceptions.RequestException as e:
+        return {"error": f"Reranker request failed: {str(e)}"}
 
 # ---------- Routes ----------
 
@@ -104,7 +116,7 @@ def retrieve(q: Questionnaire):
         row = app.state.df.iloc[i]
         results.append(
             Candidate(
-                module_id=int(i),
+                module_id=int(row.get("id")),
                 title=str(row.get("name", "")),
                 description=str(row.get("description", "")),
                 score=float(sims[i]),
@@ -116,10 +128,15 @@ def retrieve(q: Questionnaire):
 def recommend(q: Questionnaire):
     candidates = retrieve(q)  # get top 10 candidates 
 
-    query = " ".join(
-    f"Vraag {field[1:]} ({item['rating']}/5): {item['keuze']}"
-    for field, item in q.dict().items()
-    )
+    parts = []
+    for field, item in q.dict().items():
+        if item["rating"] >= 4:
+            parts.append(f"The student is very interested in {item['keuze']}.")
+        elif item["rating"] == 3:
+            parts.append(f"The student is somewhat interested in {item['keuze']}.")
+        elif item["rating"] <= 2:
+            parts.append(f"The student is less interested in {item['keuze']}.")
+    query = " ".join(parts)
 
     reranked = rerank(
         query,
@@ -140,17 +157,16 @@ def health():
 def ready():
     reranker_status = "unknown"
 
-    try:
-        r = requests.get(
-            f"{RERANKER_URL}/",
-            timeout=30
-        )
-        if r.status_code == 200:
-            reranker_status = "ok"
-        else:
-            reranker_status = "error"
-    except requests.RequestException:
-        reranker_status = "down"
+    for i in range(5):
+        try:
+            r = requests.get(f"{RERANKER_URL}/", timeout=5)
+            if r.status_code == 200:
+                reranker_status = "ok"
+            else:
+                reranker_status = "error"
+                break
+        except requests.RequestException:
+            continue
 
     return {
         "status": "ok",

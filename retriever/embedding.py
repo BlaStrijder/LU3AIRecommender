@@ -5,7 +5,7 @@ from sentence_transformers import SentenceTransformer
 model = SentenceTransformer("all-mpnet-base-v2") # paraphrase-MiniLM-L3-v2        multi-qa-MiniLM-L6-cos-v1
 
 # ---- documents ----
-df = pd.read_csv("Clean2_VKM_dataset.csv")
+df = pd.read_csv("avans_kk_DB.vkms_en.csv")
 doc_texts = df["description"].fillna("").astype(str).tolist()
 
 doc_emb = model.encode(doc_texts, convert_to_numpy=True, batch_size=32)
