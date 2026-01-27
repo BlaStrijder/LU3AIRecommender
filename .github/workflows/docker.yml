@@ -1,12 +1,40 @@
-name: Build & Push Images
+name: Secure Build & Push Images
 
 on:
   push:
     branches: [ "main" ]
 
 jobs:
+  # 1. Security scans
+  security_scan:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    # SAST - scan code
+    - name: Run Semgrep (SAST)
+      uses: returntocorp/semgrep-action@v1
+      with:
+        config: p/python
+
+    # Build image locally for scanning
+    - name: Build image for scanning
+      run: docker build -t retriever-test ./retriever
+
+    # SCA + container scan using Snyk
+    - name: Run Snyk container scan
+      uses: snyk/actions/docker@master
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        image: retriever-test
+        args: --severity-threshold=high
+
+  # 2. Build & push (only if scan passed)
   build:
     runs-on: ubuntu-latest
+    needs: security_scan
 
     steps:
     - uses: actions/checkout@v4
