@@ -2,43 +2,53 @@ name: Secure Build & Push Images
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
+
+# Give necessary permissions for security actions
+permissions:
+  contents: read
+  security-events: write  # needed for CodeQL secret scanning
 
 jobs:
-  # 1. Security scans
+  # 1 Security Scans 
   security_scan:
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout your code
       - uses: actions/checkout@v4
 
-      #  SAST - Static Application Security Testing 
+      # Semgrep (SAST for Python) 
       - name: Run Semgrep (SAST)
         uses: returntocorp/semgrep-action@v1
         with:
           config: p/python
-          extra_args: --fail-on=all  # fail the job if any issues found
+          extra_args: --fail-on=all  # fail workflow if high severity issues found
 
-      #  Build Docker image for scanning 
-      - name: Build image for scanning
+      # Build Docker image for container scanning 
+      - name: Build Docker image for scanning
         run: docker build -t retriever-test ./retriever
 
-      #  SCA + container scan using Snyk 
+      # Snyk container scan (SCA + container) 
       - name: Run Snyk container scan
         uses: snyk/actions/docker@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           image: retriever-test
           args: --severity-threshold=high
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      #  Optional: GitHub secret scanning 
-      - name: Scan for secrets
-        uses: github/codeql-action/analyze@v3
+      # CodeQL secret scanning 
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
         with:
-          category: secret
+          languages: python
+          queries: secret  # scan for secrets in your repo
 
-  # 2. Build & push Docker image (runs only if scans pass)
+      - name: Run CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+  # 2 Build & Push Docker (only if scan passed) 
   build:
     runs-on: ubuntu-latest
     needs: security_scan
@@ -52,7 +62,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build & push retriever
+      - name: Build & push Docker image
         uses: docker/build-push-action@v5
         with:
           context: ./retriever
