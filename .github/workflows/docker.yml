@@ -4,51 +4,63 @@ on:
   push:
     branches: ["main"]
 
-# Give necessary permissions for security actions
+# Minimal permissions required for code scanning
 permissions:
   contents: read
-  security-events: write  # needed for CodeQL secret scanning
+  security-events: write   # Required for CodeQL SARIF upload
 
 jobs:
-  # 1 Security Scans 
+  # 1️ Security scanning gate
   security_scan:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout your code
+      # Checkout source code so scanners can analyze it
       - uses: actions/checkout@v4
 
-      # Semgrep (SAST for Python) 
+      # Semgrep — SAST (code-level security)
       - name: Run Semgrep (SAST)
         uses: returntocorp/semgrep-action@v1
         with:
-          config: p/python
-          extra_args: --fail-on=all  # fail workflow if high severity issues found
+          # p/python =general Python correctness & safety
+          # p/security-audit  security-focused rules (RCE, injections, etc.)
+          config: |
+            p/python
+            p/security-audit
 
-      # Build Docker image for container scanning 
+          # Fail only on real security issues, not style or low-severity noise
+          args: --severity ERROR
+
+      # -------------------------
+      # Build image locally so it can be scanned
+      # -------------------------
       - name: Build Docker image for scanning
         run: docker build -t retriever-test ./retriever
 
-      # Snyk container scan (SCA + container) 
+      # -------------------------
+      # Snyk — dependency + container vulnerability scanning
+      # -------------------------
       - name: Run Snyk container scan
-        uses: snyk/actions/docker@master
+        uses: snyk/actions/docker@v4
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           image: retriever-test
+
+          # Fail only if HIGH or CRITICAL vulnerabilities exist
           args: --severity-threshold=high
 
-      # CodeQL secret scanning 
+      # CodeQL — deep semantic code analysis (GitHub-native)
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: python
-          queries: security-and-quality  # scan for secrets in your repo
+          queries: security-and-quality
 
       - name: Run CodeQL Analysis
         uses: github/codeql-action/analyze@v3
 
-  # 2 Build & Push Docker (only if scan passed) 
+  # 2️ Build & push only if ALL security checks pass
   build:
     runs-on: ubuntu-latest
     needs: security_scan
@@ -56,12 +68,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Authenticate to Docker Hub using secrets
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      # Build and push the production image
       - name: Build & push Docker image
         uses: docker/build-push-action@v5
         with:
