@@ -5,20 +5,28 @@ on:
     branches: [ "main" ]
 
 jobs:
-  # 1. Security scans
+  # 1 Security scans
   security_scan:
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
 
-    # SAST - scan code
+    # SAST - scan code for dangerous patterns, secrets, hardcoded keys
     - name: Run Semgrep (SAST)
       uses: returntocorp/semgrep-action@v1
       with:
-        config: p/python
+        config: p/security-audit
+        args: --fail-on=all  # fail workflow if any findings
 
-    # Build image locally for scanning
+    # Secret scanning
+    - name: Scan for secrets with Gitleaks
+      uses: zricethezav/gitleaks-action@v2
+      with:
+        verbose: true
+        fail_on_secrets: true
+
+    # Build image locally for container scanning
     - name: Build image for scanning
       run: docker build -t retriever-test ./retriever
 
@@ -29,9 +37,9 @@ jobs:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       with:
         image: retriever-test
-        args: --severity-threshold=high
+        args: --severity-threshold=high --fail-on=all
 
-  # 2. Build & push (only if scan passed)
+  # 2️ Build & push
   build:
     runs-on: ubuntu-latest
     needs: security_scan
