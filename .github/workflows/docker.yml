@@ -41,7 +41,7 @@ jobs:
       # Snyk — dependency + container vulnerability scanning
       # -------------------------
       - name: Run Snyk container scan
-        uses: snyk/actions/docker@v4
+        uses: snyk/actions/docker@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
