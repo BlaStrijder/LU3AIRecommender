@@ -20,26 +20,18 @@ jobs:
 
       # Semgrep — SAST (code-level security)
       - name: Run Semgrep (SAST)
-        uses: returntocorp/semgrep-action@v1
+        uses: returntocorp/semgrep-action@v2
         with:
-          # p/python =general Python correctness & safety
-          # p/security-audit  security-focused rules (RCE, injections, etc.)
           config: |
             p/python
             p/security-audit
-
-          # Fail only on real security issues, not style or low-severity noise
           args: --severity ERROR
 
-      # -------------------------
       # Build image locally so it can be scanned
-      # -------------------------
       - name: Build Docker image for scanning
         run: docker build -t retriever-test ./retriever
 
-      # -------------------------
       # Snyk — dependency + container vulnerability scanning
-      # -------------------------
       - name: Run Snyk container scan
         uses: snyk/actions/docker@master
         env:
