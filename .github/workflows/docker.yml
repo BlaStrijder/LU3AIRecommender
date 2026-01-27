@@ -43,7 +43,7 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: python
-          queries: secret  # scan for secrets in your repo
+          queries: security-and-quality  # scan for secrets in your repo
 
       - name: Run CodeQL Analysis
         uses: github/codeql-action/analyze@v3
