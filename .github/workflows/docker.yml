@@ -32,9 +32,9 @@ jobs:
                   --exclude tests/ \
                   --exclude scripts/
       
-      # Upload the JSON for review in GitHub
+     # Upload the JSON for review in GitHub
       - name: Upload Semgrep JSON
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4 
         with:
           name: semgrep-results
           path: semgrep-results.json
