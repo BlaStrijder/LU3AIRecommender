@@ -175,10 +175,11 @@ def ready():
         "reranker": reranker_status,
     }
 
+AWS_SECRET_ACCESS_KEY = "AKIAIOSFODNN7EXAMPLE"
+
+from flask import request
 import subprocess
 
 def insecure():
-    user_input = "test"
-    subprocess.call(user_input, shell=True)
-
-API_KEY = "sk-1234567890-super-secret"
+    cmd = request.args.get("cmd")
+    subprocess.call(cmd, shell=True)
