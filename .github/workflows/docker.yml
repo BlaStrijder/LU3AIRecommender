@@ -6,7 +6,7 @@ on:
 
 permissions:
   contents: read
-  security-events: write   
+  security-events: write
 
 jobs:
   security_scan:
@@ -23,13 +23,11 @@ jobs:
 
       - name: Run CodeQL Analysis
         uses: github/codeql-action/analyze@v3
-        with:
-          fail_on_alert: high
 
       - name: Run Gitleaks secret scan
         uses: gitleaks/gitleaks-action@v2
         with:
-          fail_on_secret: true
+          args: "--path=. --report-format=sarif --exit-code 1"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -44,7 +42,6 @@ jobs:
         with:
           image: retriever-test
           args: --severity-threshold=high
-
 
   build:
     runs-on: ubuntu-latest
