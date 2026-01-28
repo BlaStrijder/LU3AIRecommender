@@ -175,11 +175,13 @@ def ready():
         "reranker": reranker_status,
     }
 
-AWS_SECRET_ACCESS_KEY = "AKIAIOSFODNN7EXAMPLE"
+AWS_SECRET_ACCESS_KEY = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
 
-from flask import request
+from fastapi import Request
 import subprocess
 
-def insecure():
-    cmd = request.args.get("cmd")
+@app.get("/insecure")
+def insecure(request: Request):
+    cmd = request.query_params.get("cmd")
     subprocess.call(cmd, shell=True)
+    return {"status": "executed"}
