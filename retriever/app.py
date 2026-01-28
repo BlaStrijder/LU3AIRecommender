@@ -174,7 +174,3 @@ def ready():
         "embeddings_loaded": app.state.embeddings is not None,
         "reranker": reranker_status,
     }
-
-MY_FAKE_API_KEY = "sk_test_51H8bZxC0XXXXXYYYYZZZZ1111222233334444"
-AWS_SECRET_ACCESS_KEY = "AKIA1234567890ABCDEFGHIJKLMNOPQRST"
-
