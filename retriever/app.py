@@ -175,12 +175,6 @@ def ready():
         "reranker": reranker_status,
     }
 
+MY_FAKE_API_KEY = "sk_test_51H8bZxC0XXXXXYYYYZZZZ1111222233334444"
+AWS_SECRET_ACCESS_KEY = "AKIA1234567890ABCDEFGHIJKLMNOPQRST"
 
-from fastapi import Request
-import subprocess
-
-@app.get("/insecuree") 
-def insecure(request: Request):
-    cmd = request.query_params.get("cmd")
-    subprocess.call(cmd, shell=True)
-    return {"status": "executed"} 
