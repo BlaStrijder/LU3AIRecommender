@@ -21,11 +21,13 @@ jobs:
         with:
           languages: python
 
-      - name: CodeQL Autobuild
-        uses: github/codeql-action/autobuild@v3
-
       - name: Run CodeQL Analysis
         uses: github/codeql-action/analyze@v3
+
+      - name: Run Gitleaks secret scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Docker image
         run: docker build -t retriever-test ./retriever
