@@ -100,8 +100,8 @@ def rerank(query: str, candidates: list):   # candidates is a list of dicts in t
         return response.json()
     except requests.exceptions.Timeout:
         return {"error": "Reranker timed out"}
-    except requests.exceptions.RequestException as e:
-        return {"error": f"Reranker request failed: {str(e)}"}
+    except requests.exceptions.RequestException:
+        return {"error": "Reranker service is currently unavailable"}
 
 # ---------- Routes ----------
 
